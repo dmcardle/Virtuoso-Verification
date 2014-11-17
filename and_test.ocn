@@ -1,0 +1,47 @@
+simulator( 'spectre )
+design(	 "/home/csgrad/demcardl/vlsi/cadence/simulation/1bit_and/spectre/schematic/netlist/netlist")
+resultsDir( "/home/csgrad/demcardl/vlsi/cadence/simulation/1bit_and/spectre/schematic" )
+modelFile( 
+    '("/util/cadence/local/ncsu-cdk-1.6.0.beta/models/spectre/nom/ami06N.m" "")
+    '("/util/cadence/local/ncsu-cdk-1.6.0.beta/models/spectre/nom/ami06P.m" "")
+)
+stimulusFile( ?xlate nil
+    "/home/csgrad/demcardl/vlsi/cadence/simulation/1bit_and/spectre/schematic/netlist/_graphical_stimuli.scs")
+analysis('tran ?stop "16n"  )
+envOption(
+	'analysisOrder  list("tran") 
+)
+temp( 27 ) 
+run()
+
+
+
+selectResults('tran)
+for(i 1 4 
+    measuredDelay = 0.6n
+    timeParam = i*2n 
+    vOut = value(v("/Out" ?result "tran") timeParam)
+    ;printf("Value at position %d (time=%e) is %e Volts\n" i timeParam vOut )
+
+    vA = value(v("/A" ?result "tran") timeParam)
+    vB = value(v("/B" ?result "tran") timeParam)
+
+    print(a0)
+    print(" ")
+    print(b0)
+    println(" ")
+
+    if( (vOut > 4.9)
+        ;then
+        printf("==> 1\n")
+        ;else
+        if( (vOut < 0.1)
+            ;then
+            printf("==> 0\n")
+            ;else
+            printf("ILLOGICAL\n") )
+
+    )
+)
+
+
