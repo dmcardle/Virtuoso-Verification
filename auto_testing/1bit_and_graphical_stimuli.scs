@@ -1,0 +1,3 @@
+_vB (B 0) vsource val0=5 val1=0 period=16n width=8n type=pulse
+_vA (A 0) vsource val0=5 val1=0 period=8n width=4n type=pulse
+_vvdd! (vdd! 0) vsource dc=5 type=dc

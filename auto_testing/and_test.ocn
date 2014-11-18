@@ -5,6 +5,7 @@ modelFile(
     '("/util/cadence/local/ncsu-cdk-1.6.0.beta/models/spectre/nom/ami06N.m" "")
     '("/util/cadence/local/ncsu-cdk-1.6.0.beta/models/spectre/nom/ami06P.m" "")
 )
+; TODO determine how to load the local graphical stimuli file instead of this one.
 stimulusFile( ?xlate nil
     "/home/csgrad/demcardl/vlsi/cadence/simulation/1bit_and/spectre/schematic/netlist/_graphical_stimuli.scs")
 analysis('tran ?stop "16n"  )
