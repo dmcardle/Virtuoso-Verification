@@ -14,34 +14,61 @@ envOption(
 temp( 27 ) 
 run()
 
+; Apparently, the %s specifier can print the value `t`, but not the value `nil`,
+; which stand for true and false respectively. This makes `printf` useless for
+; printing boolean values. The `boolean2string` function makes a boolean value
+; into a printable string. 
+(procedure boolean2string(b)
+    (if b "TRUE" "FALSE"))
 
+; The `target` function simulates the AND gate in the discrete domain.
+(procedure target(a,b)
+    (and a b))
+
+; The `voltage2boolean` function simply thresholds based on the 50% mark of
+; VDD. TODO: throw error if voltage is not above 90% VDD or below 10% VDD
+; because we should never be testing the voltage during output transitions.
+(procedure voltage2boolean(voltage, vdd)
+    (voltage > 0.5*vdd))
 
 selectResults('tran)
-for(i 1 4 
-    measuredDelay = 0.6n
-    timeParam = i*2n 
-    vOut = value(v("/Out" ?result "tran") timeParam)
-    ;printf("Value at position %d (time=%e) is %e Volts\n" i timeParam vOut )
 
+
+; TODO: make the for loop below into a function that can be reused in different
+; testers. The number of inputs, number of outputs, and target function should
+; be parameters.
+
+numInputs = 2
+numPermutations = 2 ** numInputs
+
+for(i 0 (numPermutations-1) 
+
+    ; TODO: automatically determine from graphical_stimuli.scs file. Is this
+    ;       info available in a pre-parsed form?
+    vdd = 5
+    smallestPulseWidth = 4n
+
+    ; TODO: automatically determine delay of circuit so we don't measure during
+    ;       a transition.
+    measuredDelay = 0.6n
+    timeParam = i*smallestPulseWidth + measuredDelay
+
+    ; Get voltage values for inputs and outputs.
     vA = value(v("/A" ?result "tran") timeParam)
     vB = value(v("/B" ?result "tran") timeParam)
+    vOut = value(v("/Out" ?result "tran") timeParam)
 
-    print(a0)
-    print(" ")
-    print(b0)
-    println(" ")
+    ; Convert voltages to boolean values.
+    bA = voltage2boolean(vA, vdd)
+    bB = voltage2boolean(vB, vdd)
+    bOut = voltage2boolean(vOut, vdd)
+    
+    printf("A = %s, B = %s, target = %s\n" (boolean2string bA) (boolean2string bB) (boolean2string (target bA bB)))
 
-    if( (vOut > 4.9)
-        ;then
-        printf("==> 1\n")
-        ;else
-        if( (vOut < 0.1)
-            ;then
-            printf("==> 0\n")
-            ;else
-            printf("ILLOGICAL\n") )
-
-    )
+    ; Check if the target function is modeled by the simulation results.
+    (if (eq bOut (target bA bB))
+        (printf "success\n")
+        (printf "FAILURE\n"))
 )
 
 
