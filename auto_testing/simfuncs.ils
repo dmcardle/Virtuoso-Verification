@@ -1,0 +1,91 @@
+
+(defun replicate (n a)
+    (if (eq n 0)
+        nil
+        (cons a (replicate (n-1) a))))
+
+(defun sum (xs)
+    (if (null xs)
+        0
+        ((car xs) + (sum (cdr xs)))))
+
+(defun increment (bits)
+    (if (eq (car bits) 0)
+        (cons 1 (cdr bits))
+        (cons 0 (increment (cdr bits)))))
+
+(defun permute (bits)
+    (if (eq (sum bits) (length bits))
+        (list bits)
+        (cons bits (permute (increment bits)))))
+
+(defun intToStr (n)
+    (sprintf nil "%d" n))
+
+(defun intListToStrList (intList)
+    (map 'intToStr intList))
+
+(defun concatStrList (strList)
+    (if (null strList)
+        nil
+        (sprintf nil "%s%s" (car strList) (concatStrList (cdr strList)))))
+
+(defun intListToStr (intList)
+    (concatStrList (intListToStrList intList)))
+
+; Return all permutations of n bits
+(defun permutations (n)
+    (permute (replicate n 0)))
+
+(defun assignDesVars (inputs)
+    (if (null inputs)
+        nil
+        (progn
+            varName = (strcat "S" (sprintf nil "%d" ((length inputs)-1)))
+            varVal = (car inputs)
+
+            printf( "Assigning %s value %d\n" varName varVal)
+
+            (desVar varName varVal)
+            (assignDesVars (cdr inputs)))))
+
+(defun verifyResults (inputs outputs)
+    (if (eq (apply targetFunc inputs) outputs)
+        nil
+        (printf "ERROR!"
+            ;(intListToStr inputs)
+            ;(intListToStr outputs)
+            )))
+
+; TODO instead of synthesizing the output name, just take a list of output
+; names as input!
+(defun getSimOutputs (n)
+    (if (n < 0)
+        nil
+        (progn
+            pinName = (strcat "/O" (sprintf nil "%d" n))
+            (cons (value (v pinName ?result "tran") END_TIME)
+                  (getSimOutputs (n-1))))))
+
+; Note that inputLists is a list of input lists.
+(defun testInputLists (inputLists)
+
+    inputs = (car inputLists) ; Determine this configuration of inputs
+    (assignDesVars inputs)    ; Instruct simulation which values to use
+    (run)                     ; Run the simulation
+    simOutputs = (getSimOutputs (NUM_OUTPUTS-1)) ; Save the outputs
+    (verifyResults inputs simOutputs) ; Expected vs Observed
+
+    ; Test all remaining input patterns
+    ;(testInputLists (cdr inputinputLists))
+    )
+
+(defun intValue (bits)
+    (if (null bits)
+        0
+        ((car bits) + (2 * (intValue (cdr bits))))))
+
+(defun explodeToBits (intValue)
+    (if (eq intValue 0)
+        nil
+        (cons (mod intValue 2) (explodeToBits (intValue / 2)))))

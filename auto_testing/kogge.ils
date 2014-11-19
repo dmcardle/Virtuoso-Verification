@@ -1,0 +1,50 @@
+
+(load "auto_testing/simfuncs.ils")
+
+; This function defines the expected behavior of the schematic/layout. It will
+; be used by the testing framework to verify the validity of the design.
+;
+; Note that
+;
+;   (1) The input parameters must be in the exact same order as the inputs to
+;       the schematic/layout
+;
+;   (2) a0 and b0 are the least-significant bits of the two 4-bit integers
+(defun targetFunc (a0 b0  a1 b1  a2 b2  a3 b3  cin)
+    A = (list a0 a1 a2 a3)
+    B = (list b0 b1 b2 b3)
+    Cin = (list cin)
+    
+    outputInt = ((intValue A) + (intValue B) + (intValue Cin))
+    (explodeToBits outputInt))
+
+
+;;;; Initialize simulation
+NUM_INPUTS = 9 ; 4 bits for A, 4 bits for B, 1 Carry-in
+NUM_OUTPUTS = 5
+END_TIME = 4n
+
+simulator( 'spectre )
+design( "/shared/projects/CSE493/team-05/auto_testing/simulation/KoggeStone/spectre/schematic/netlist/netlist" )
+resultsDir( "/shared/projects/CSE493/team-05/auto_testing/simulation/KoggeStone/spectre/schematic" )
+modelFile( 
+    '("/util/cadence/local/ncsu-cdk-1.6.0.beta/models/spectre/nom/ami06N.m" "")
+    '("/util/cadence/local/ncsu-cdk-1.6.0.beta/models/spectre/nom/ami06P.m" "")
+)
+stimulusFile( ?xlate nil
+    "/shared/projects/CSE493/team-05/auto_testing/simulation/KoggeStone/spectre/schematic/netlist/_graphical_stimuli.scs")
+analysis('tran ?stop "4n"  )
+
+
+envOption(
+	'analysisOrder  list("tran") 
+)
+saveOption( 'save "all" )
+temp( 27 ) 
+
+;;;; Run simulation for all permutations of inputs, compare against adderFunc
+(testInputLists (permutations NUM_INPUTS))
+
+;;;; DEBUG
+;run() ; run a single simulation
+;openResults("auto_testing/simulation/KoggeStone/spectre/schematic/psf/")
