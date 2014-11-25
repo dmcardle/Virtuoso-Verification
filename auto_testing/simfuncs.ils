@@ -1,6 +1,23 @@
+(defun intValue (bits)
+    (if (null bits)
+        0
+        ((car bits) + (2 * (intValue (cdr bits))))))
+
+(defun snoc (values lastVal)
+    (append values (list lastVal)))
+
+(defun lengthenBitlist (bitlist size)
+    (if ((length bitlist) < size)
+        (lengthenBitlist (snoc bitlist 0) size)
+        bitlist))
+
+(defun explodeToBits (intValue)
+    (if (equal intValue 0)
+        nil
+        (cons (mod intValue 2) (explodeToBits (intValue / 2)))))
 
 (defun replicate (n a)
-    (if (eq n 0)
+    (if (equal n 0)
         nil
         (cons a (replicate (n-1) a))))
 
@@ -10,12 +27,12 @@
         ((car xs) + (sum (cdr xs)))))
 
 (defun increment (bits)
-    (if (eq (car bits) 0)
+    (if (equal (car bits) 0)
         (cons 1 (cdr bits))
         (cons 0 (increment (cdr bits)))))
 
 (defun permute (bits)
-    (if (eq (sum bits) (length bits))
+    (if (equal (sum bits) (length bits))
         (list bits)
         (cons bits (permute (increment bits)))))
 
@@ -23,69 +40,70 @@
     (sprintf nil "%d" n))
 
 (defun intListToStrList (intList)
-    (map 'intToStr intList))
-
-(defun concatStrList (strList)
-    (if (null strList)
-        nil
-        (sprintf nil "%s%s" (car strList) (concatStrList (cdr strList)))))
+    (mapcar 'intToStr intList))
 
 (defun intListToStr (intList)
-    (concatStrList (intListToStrList intList)))
+    (buildString (intListToStrList intList) " "))
 
 ; Return all permutations of n bits
 (defun permutations (n)
     (permute (replicate n 0)))
 
-(defun assignDesVars (inputs)
-    (if (null inputs)
+(defun assignDesVars (values names)
+    (if (or (null values) (null names))
         nil
         (progn
-            varName = (strcat "S" (sprintf nil "%d" ((length inputs)-1)))
-            varVal = (car inputs)
+            pinName = (car names)
+            pinValue = (car values)
 
-            printf( "Assigning %s value %d\n" varName varVal)
+            printf( "Assigning %s value %d\n" pinName pinValue)
 
-            (desVar varName varVal)
-            (assignDesVars (cdr inputs)))))
+            (desVar pinName pinValue)
+            (assignDesVars (cdr values) (cdr names)))))
 
 (defun verifyResults (inputs outputs)
-    (if (eq (apply targetFunc inputs) outputs)
-        nil
-        (printf "ERROR!"
-            ;(intListToStr inputs)
-            ;(intListToStr outputs)
-            )))
 
-; TODO instead of synthesizing the output name, just take a list of output
-; names as input!
-(defun getSimOutputs (n)
-    (if (n < 0)
+    numOutBits = (length outputs)
+
+    ; generate bitlist from targetFunc
+    expected = (lengthenBitlist
+                 (apply targetFunc inputs)
+                 numOutBits)
+
+    (if (equal expected outputs)
+        t
+        (printf "ERROR! inp = (%s), out = (%s), expected = (%s)\n"
+            (intListToStr inputs)
+            (intListToStr outputs)
+            (intListToStr expected))))
+
+(defun getSimOutputs ( outPins )
+    (if (null outPins)
         nil
         (progn
-            pinName = (strcat "/O" (sprintf nil "%d" n))
+            pinName = (car outPins)
             (cons (value (v pinName ?result "tran") END_TIME)
-                  (getSimOutputs (n-1))))))
+                  (getSimOutputs (cdr outPins))))))
 
 ; Note that inputLists is a list of input lists.
-(defun testInputLists (inputLists)
+(defun testInputLists (inputPatterns inPins outPins)
 
-    inputs = (car inputLists) ; Determine this configuration of inputs
-    (assignDesVars inputs)    ; Instruct simulation which values to use
-    (run)                     ; Run the simulation
-    simOutputs = (getSimOutputs (NUM_OUTPUTS-1)) ; Save the outputs
-    (verifyResults inputs simOutputs) ; Expected vs Observed
+    (defun threshFunc (voltage) 
+        (if (voltage > 4.5)
+            1
+            (if (voltage < 0.5)
+                0
+                (printf "ERROR! Bad voltage at %.2f Volts\n" voltage))))
+                
+
+    inValues = (car inputPatterns) ; Determine this configuration of inputs
+
+    (assignDesVars inValues inPins); Instruct simulation which values to use
+    (run)                          ; Run the simulation
+    outVolts = (getSimOutputs outPins) ; Save the outputs
+    outValues = (mapcar threshFunc outVolts)
+    (verifyResults inValues outValues) ; Expected vs Observed
 
     ; Test all remaining input patterns
-    ;(testInputLists (cdr inputinputLists))
-    )
+    (testInputLists (cdr inputPatterns) inPins outPins))
 
-(defun intValue (bits)
-    (if (null bits)
-        0
-        ((car bits) + (2 * (intValue (cdr bits))))))
-
-(defun explodeToBits (intValue)
-    (if (eq intValue 0)
-        nil
-        (cons (mod intValue 2) (explodeToBits (intValue / 2)))))
